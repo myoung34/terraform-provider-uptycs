@@ -62,54 +62,92 @@ func (r resourceEventRuleType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Type:     types.ListType{ElemType: types.StringType},
 				Required: true,
 			},
+
 			"builder_config": {
 				Required: true,
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"id": {
 						Type:     types.StringType,
-            Computed: true,
+						Computed: true,
 					},
 					"customer_id": {
 						Type:     types.StringType,
-            Computed: true,
+						Computed: true,
 					},
 					"table_name": {
 						Type:     types.StringType,
-            Optional: true,
+						Optional: true,
 					},
 					"added": {
 						Type:     types.BoolType,
-            Optional: true,
+						Optional: true,
 					},
 					"matches_filter": {
 						Type:     types.BoolType,
-            Optional: true,
+						Optional: true,
 					},
 					"severity": {
 						Type:     types.StringType,
-            Optional: true,
+						Optional: true,
 					},
 					"key": {
 						Type:     types.StringType,
-            Optional: true,
+						Optional: true,
 					},
 					"value_field": {
 						Type:     types.StringType,
-            Optional: true,
+						Optional: true,
 					},
-			    "auto_alert_config": {
-            Optional: true,
-			    	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			    		"raise_alert": {
-			    			Type:     types.BoolType,
-                Optional: true,
-			    		},
-			    		"disable_alert": {
-			    			Type:     types.BoolType,
-                Optional: true,
-			    		},
-			    	}),
-			    },
+					"filters": {
+						Required: true,
+						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							"value": {
+								Type:     types.StringType,
+								Optional: true,
+							},
+							"not": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+							"name": {
+								Type:     types.StringType,
+								Optional: true,
+							},
+							"operator": {
+								Type:     types.StringType,
+								Optional: true,
+							},
+							"is_date": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+							"is_version": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+							"is_word_match": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+							"case_insensitive": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+						}),
+					},
+					"auto_alert_config": {
+						Optional: true,
+						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							"raise_alert": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+							"disable_alert": {
+								Type:     types.BoolType,
+								Optional: true,
+							},
+						}),
+					},
 				}),
 			},
 		},
@@ -159,19 +197,32 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 		GroupingL2:  plan.GroupingL2.Value,
 		GroupingL3:  plan.GroupingL3.Value,
 		EventTags:   tags,
-    BuilderConfig: uptycs.BuilderConfig{
-      TableName: plan.BuilderConfig.TableName.Value,
-	    Added: plan.BuilderConfig.Added.Value,
-	    MatchesFilter: plan.BuilderConfig.MatchesFilter.Value,
-	    Severity: plan.BuilderConfig.Severity.Value,
-	    Key: plan.BuilderConfig.Key.Value,
-	    ValueField: plan.BuilderConfig.ValueField.Value,
-	    AutoAlertConfig: uptycs.AutoAlertConfig{
-        DisableAlert: plan.BuilderConfig.AutoAlertConfig.DisableAlert.Value,
-        RaiseAlert: plan.BuilderConfig.AutoAlertConfig.RaiseAlert.Value,
-      },
-    },
-
+		BuilderConfig: uptycs.BuilderConfig{
+			Filters: uptycs.BuilderConfigFilter{
+			  And: []uptycs.BuilderConfigFilter{
+			  	uptycs.BuilderConfigFilter{
+						Not:             plan.BuilderConfig.Filters.Not.Value,
+						Name:            plan.BuilderConfig.Filters.Name.Value,
+						Operator:        plan.BuilderConfig.Filters.Operator.Value,
+						Value:           uptycs.ArrayOrString{plan.BuilderConfig.Filters.Value.Value},
+						IsDate:          plan.BuilderConfig.Filters.IsDate.Value,
+						IsVersion:       plan.BuilderConfig.Filters.IsVersion.Value,
+						IsWordMatch:     plan.BuilderConfig.Filters.IsWordMatch.Value,
+						CaseInsensitive: plan.BuilderConfig.Filters.CaseInsensitive.Value,
+					},
+				},
+			},
+			TableName:     plan.BuilderConfig.TableName.Value,
+			Added:         plan.BuilderConfig.Added.Value,
+			MatchesFilter: plan.BuilderConfig.MatchesFilter.Value,
+			Severity:      plan.BuilderConfig.Severity.Value,
+			Key:           plan.BuilderConfig.Key.Value,
+			ValueField:    plan.BuilderConfig.ValueField.Value,
+			AutoAlertConfig: uptycs.AutoAlertConfig{
+				DisableAlert: plan.BuilderConfig.AutoAlertConfig.DisableAlert.Value,
+				RaiseAlert:   plan.BuilderConfig.AutoAlertConfig.RaiseAlert.Value,
+			},
+		},
 	})
 
 	if err != nil {
@@ -278,15 +329,15 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		GroupingL2:  plan.GroupingL2.Value,
 		GroupingL3:  plan.GroupingL3.Value,
 		EventTags:   tags,
-    BuilderConfig: uptycs.BuilderConfig{
-      TableName: plan.BuilderConfig.TableName.Value,
-	    Added: plan.BuilderConfig.Added.Value,
-	    MatchesFilter: plan.BuilderConfig.MatchesFilter.Value,
-	    Severity: plan.BuilderConfig.Severity.Value,
-	    Key: plan.BuilderConfig.Key.Value,
-	    ValueField: plan.BuilderConfig.ValueField.Value,
-	    AutoAlertConfig: uptycs.AutoAlertConfig{},
-    },
+		BuilderConfig: uptycs.BuilderConfig{
+			TableName:       plan.BuilderConfig.TableName.Value,
+			Added:           plan.BuilderConfig.Added.Value,
+			MatchesFilter:   plan.BuilderConfig.MatchesFilter.Value,
+			Severity:        plan.BuilderConfig.Severity.Value,
+			Key:             plan.BuilderConfig.Key.Value,
+			ValueField:      plan.BuilderConfig.ValueField.Value,
+			AutoAlertConfig: uptycs.AutoAlertConfig{},
+		},
 	})
 
 	if err != nil {
@@ -311,15 +362,15 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		EventTags: types.List{
 			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
 		},
-    BuilderConfig: BuilderConfig{
-      TableName: types.String{Value: eventRuleResp.BuilderConfig.TableName},
-	    Added: types.Bool{Value: eventRuleResp.BuilderConfig.Added},
-	    MatchesFilter: types.Bool{Value: eventRuleResp.BuilderConfig.MatchesFilter},
-	    Severity: types.String{Value: eventRuleResp.BuilderConfig.Severity},
-	    Key: types.String{Value: eventRuleResp.BuilderConfig.Key},
-	    ValueField: types.String{Value: eventRuleResp.BuilderConfig.ValueField},
-	    AutoAlertConfig: AutoAlertConfig{},
-    },
+		BuilderConfig: BuilderConfig{
+			TableName:       types.String{Value: eventRuleResp.BuilderConfig.TableName},
+			Added:           types.Bool{Value: eventRuleResp.BuilderConfig.Added},
+			MatchesFilter:   types.Bool{Value: eventRuleResp.BuilderConfig.MatchesFilter},
+			Severity:        types.String{Value: eventRuleResp.BuilderConfig.Severity},
+			Key:             types.String{Value: eventRuleResp.BuilderConfig.Key},
+			ValueField:      types.String{Value: eventRuleResp.BuilderConfig.ValueField},
+			AutoAlertConfig: AutoAlertConfig{},
+		},
 	}
 
 	diags = resp.State.Set(ctx, result)
