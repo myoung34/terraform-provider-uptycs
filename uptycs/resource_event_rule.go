@@ -2,6 +2,7 @@ package uptycs
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -61,6 +62,56 @@ func (r resourceEventRuleType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Type:     types.ListType{ElemType: types.StringType},
 				Required: true,
 			},
+			"builder_config": {
+				Required: true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"id": {
+						Type:     types.StringType,
+            Computed: true,
+					},
+					"customer_id": {
+						Type:     types.StringType,
+            Computed: true,
+					},
+					"table_name": {
+						Type:     types.StringType,
+            Optional: true,
+					},
+					"added": {
+						Type:     types.BoolType,
+            Optional: true,
+					},
+					"matches_filter": {
+						Type:     types.BoolType,
+            Optional: true,
+					},
+					"severity": {
+						Type:     types.StringType,
+            Optional: true,
+					},
+					"key": {
+						Type:     types.StringType,
+            Optional: true,
+					},
+					"value_field": {
+						Type:     types.StringType,
+            Optional: true,
+					},
+			    "auto_alert_config": {
+            Optional: true,
+			    	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			    		"raise_alert": {
+			    			Type:     types.BoolType,
+                Optional: true,
+			    		},
+			    		"disable_alert": {
+			    			Type:     types.BoolType,
+                Optional: true,
+			    		},
+			    	}),
+			    },
+				}),
+			},
 		},
 	}, nil
 }
@@ -95,11 +146,7 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	var tags []string
-
-	// will cause cannot range over plan.EventTags (variable of type types.ListType)
-	for _, tag := range plan.EventTags {
-		tags = append(tags, tag.Value)
-	}
+	plan.EventTags.ElementsAs(ctx, &tags, false)
 
 	eventRuleResp, err := r.p.client.CreateEventRule(uptycs.EventRule{
 		Name:        plan.Name.Value,
@@ -111,7 +158,20 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 		Grouping:    plan.Grouping.Value,
 		GroupingL2:  plan.GroupingL2.Value,
 		GroupingL3:  plan.GroupingL3.Value,
-		EventTags:   plan.EventTags.Value, // will cause plan.EventTags.Value undefined (type types.ListType has no field or method Value
+		EventTags:   tags,
+    BuilderConfig: uptycs.BuilderConfig{
+      TableName: plan.BuilderConfig.TableName.Value,
+	    Added: plan.BuilderConfig.Added.Value,
+	    MatchesFilter: plan.BuilderConfig.MatchesFilter.Value,
+	    Severity: plan.BuilderConfig.Severity.Value,
+	    Key: plan.BuilderConfig.Key.Value,
+	    ValueField: plan.BuilderConfig.ValueField.Value,
+	    AutoAlertConfig: uptycs.AutoAlertConfig{
+        DisableAlert: plan.BuilderConfig.AutoAlertConfig.DisableAlert.Value,
+        RaiseAlert: plan.BuilderConfig.AutoAlertConfig.RaiseAlert.Value,
+      },
+    },
+
 	})
 
 	if err != nil {
@@ -133,6 +193,9 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 		Grouping:    types.String{Value: eventRuleResp.Grouping},
 		GroupingL2:  types.String{Value: eventRuleResp.GroupingL2},
 		GroupingL3:  types.String{Value: eventRuleResp.GroupingL3},
+		EventTags: types.List{
+			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
+		},
 	}
 
 	diags = resp.State.Set(ctx, result)
@@ -156,6 +219,7 @@ func (r resourceEventRule) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		)
 		return
 	}
+
 	var result = EventRule{
 		ID:          types.String{Value: eventRuleResp.ID},
 		Enabled:     types.Bool{Value: eventRuleResp.Enabled},
@@ -167,6 +231,9 @@ func (r resourceEventRule) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		Grouping:    types.String{Value: eventRuleResp.Grouping},
 		GroupingL2:  types.String{Value: eventRuleResp.GroupingL2},
 		GroupingL3:  types.String{Value: eventRuleResp.GroupingL3},
+		EventTags: types.List{
+			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
+		},
 	}
 
 	diags := resp.State.Set(ctx, result)
@@ -196,6 +263,9 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		return
 	}
 
+	var tags []string
+	plan.EventTags.ElementsAs(ctx, &tags, false)
+
 	eventRuleResp, err := r.p.client.UpdateEventRule(uptycs.EventRule{
 		ID:          eventRuleID,
 		Name:        plan.Name.Value,
@@ -207,6 +277,16 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		Grouping:    plan.Grouping.Value,
 		GroupingL2:  plan.GroupingL2.Value,
 		GroupingL3:  plan.GroupingL3.Value,
+		EventTags:   tags,
+    BuilderConfig: uptycs.BuilderConfig{
+      TableName: plan.BuilderConfig.TableName.Value,
+	    Added: plan.BuilderConfig.Added.Value,
+	    MatchesFilter: plan.BuilderConfig.MatchesFilter.Value,
+	    Severity: plan.BuilderConfig.Severity.Value,
+	    Key: plan.BuilderConfig.Key.Value,
+	    ValueField: plan.BuilderConfig.ValueField.Value,
+	    AutoAlertConfig: uptycs.AutoAlertConfig{},
+    },
 	})
 
 	if err != nil {
@@ -228,6 +308,18 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		Grouping:    types.String{Value: eventRuleResp.Grouping},
 		GroupingL2:  types.String{Value: eventRuleResp.GroupingL2},
 		GroupingL3:  types.String{Value: eventRuleResp.GroupingL3},
+		EventTags: types.List{
+			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
+		},
+    BuilderConfig: BuilderConfig{
+      TableName: types.String{Value: eventRuleResp.BuilderConfig.TableName},
+	    Added: types.Bool{Value: eventRuleResp.BuilderConfig.Added},
+	    MatchesFilter: types.Bool{Value: eventRuleResp.BuilderConfig.MatchesFilter},
+	    Severity: types.String{Value: eventRuleResp.BuilderConfig.Severity},
+	    Key: types.String{Value: eventRuleResp.BuilderConfig.Key},
+	    ValueField: types.String{Value: eventRuleResp.BuilderConfig.ValueField},
+	    AutoAlertConfig: AutoAlertConfig{},
+    },
 	}
 
 	diags = resp.State.Set(ctx, result)
