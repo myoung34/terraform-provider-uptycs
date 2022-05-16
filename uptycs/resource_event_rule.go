@@ -46,17 +46,17 @@ func (r resourceEventRuleType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Type:     types.StringType,
 				Required: true,
 			},
-			"enabled": {
-				Type:     types.BoolType,
-				Required: true,
-			},
 			"grouping_l2": {
 				Type:     types.StringType,
-				Required: true,
+				Optional: true,
 			},
 			"grouping_l3": {
 				Type:     types.StringType,
-				Required: true,
+				Optional: true,
+			},
+			"enabled": {
+				Type:     types.BoolType,
+				Optional: true,
 			},
 			"event_tags": {
 				Type:     types.ListType{ElemType: types.StringType},
@@ -135,19 +135,19 @@ func (r resourceEventRuleType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 							},
 						}),
 					},
-					"auto_alert_config": {
-						Optional: true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"raise_alert": {
-								Type:     types.BoolType,
-								Optional: true,
-							},
-							"disable_alert": {
-								Type:     types.BoolType,
-								Optional: true,
-							},
-						}),
-					},
+					//"auto_alert_config": {
+					//	Optional: true,
+					//	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					//		"raise_alert": {
+					//			Type:     types.BoolType,
+					//			Optional: true,
+					//		},
+					//		"disable_alert": {
+					//			Type:     types.BoolType,
+					//			Optional: true,
+					//		},
+					//	}),
+					//},
 				}),
 			},
 		},
@@ -193,14 +193,15 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 		Rule:        plan.Rule.Value,
 		Type:        plan.Type.Value,
 		Enabled:     plan.Enabled.Value,
+		Custom:      true,
 		Grouping:    plan.Grouping.Value,
 		GroupingL2:  plan.GroupingL2.Value,
 		GroupingL3:  plan.GroupingL3.Value,
 		EventTags:   tags,
 		BuilderConfig: uptycs.BuilderConfig{
 			Filters: uptycs.BuilderConfigFilter{
-			  And: []uptycs.BuilderConfigFilter{
-			  	uptycs.BuilderConfigFilter{
+				And: []uptycs.BuilderConfigFilter{
+					uptycs.BuilderConfigFilter{
 						Not:             plan.BuilderConfig.Filters.Not.Value,
 						Name:            plan.BuilderConfig.Filters.Name.Value,
 						Operator:        plan.BuilderConfig.Filters.Operator.Value,
@@ -218,10 +219,10 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 			Severity:      plan.BuilderConfig.Severity.Value,
 			Key:           plan.BuilderConfig.Key.Value,
 			ValueField:    plan.BuilderConfig.ValueField.Value,
-			AutoAlertConfig: uptycs.AutoAlertConfig{
-				DisableAlert: plan.BuilderConfig.AutoAlertConfig.DisableAlert.Value,
-				RaiseAlert:   plan.BuilderConfig.AutoAlertConfig.RaiseAlert.Value,
-			},
+			//AutoAlertConfig: uptycs.AutoAlertConfig{
+			//	DisableAlert: plan.BuilderConfig.AutoAlertConfig.DisableAlert.Value,
+			//	RaiseAlert:   plan.BuilderConfig.AutoAlertConfig.RaiseAlert.Value,
+			//},
 		},
 	})
 
@@ -244,9 +245,10 @@ func (r resourceEventRule) Create(ctx context.Context, req tfsdk.CreateResourceR
 		Grouping:    types.String{Value: eventRuleResp.Grouping},
 		GroupingL2:  types.String{Value: eventRuleResp.GroupingL2},
 		GroupingL3:  types.String{Value: eventRuleResp.GroupingL3},
-		EventTags: types.List{
-			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
-		},
+    //EventTags: types.List{},
+		//EventTags: types.List{
+		//	Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
+		//},
 	}
 
 	diags = resp.State.Set(ctx, result)
@@ -282,6 +284,7 @@ func (r resourceEventRule) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		Grouping:    types.String{Value: eventRuleResp.Grouping},
 		GroupingL2:  types.String{Value: eventRuleResp.GroupingL2},
 		GroupingL3:  types.String{Value: eventRuleResp.GroupingL3},
+    //EventTags: types.List{},
 		EventTags: types.List{
 			Elems: make([]attr.Value, len(eventRuleResp.EventTags)),
 		},
@@ -321,6 +324,7 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 		ID:          eventRuleID,
 		Name:        plan.Name.Value,
 		Code:        plan.Code.Value,
+		Custom:      true,
 		Description: plan.Description.Value,
 		Rule:        plan.Rule.Value,
 		Type:        plan.Type.Value,
@@ -336,7 +340,7 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 			Severity:        plan.BuilderConfig.Severity.Value,
 			Key:             plan.BuilderConfig.Key.Value,
 			ValueField:      plan.BuilderConfig.ValueField.Value,
-			AutoAlertConfig: uptycs.AutoAlertConfig{},
+			//AutoAlertConfig: uptycs.AutoAlertConfig{},
 		},
 	})
 
@@ -369,7 +373,7 @@ func (r resourceEventRule) Update(ctx context.Context, req tfsdk.UpdateResourceR
 			Severity:        types.String{Value: eventRuleResp.BuilderConfig.Severity},
 			Key:             types.String{Value: eventRuleResp.BuilderConfig.Key},
 			ValueField:      types.String{Value: eventRuleResp.BuilderConfig.ValueField},
-			AutoAlertConfig: AutoAlertConfig{},
+			//AutoAlertConfig: AutoAlertConfig{},
 		},
 	}
 

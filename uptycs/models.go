@@ -30,9 +30,9 @@ type EventRule struct {
 	Type          types.String  `tfsdk:"type"`
 	Rule          types.String  `tfsdk:"rule"`
 	Grouping      types.String  `tfsdk:"grouping"`
-	Enabled       types.Bool    `tfsdk:"enabled"`
 	GroupingL2    types.String  `tfsdk:"grouping_l2"`
 	GroupingL3    types.String  `tfsdk:"grouping_l3"`
+	Enabled       types.Bool    `tfsdk:"enabled"`
 	EventTags     types.List    `tfsdk:"event_tags"`
 	BuilderConfig BuilderConfig `tfsdk:"builder_config"`
 }
@@ -47,7 +47,7 @@ type BuilderConfig struct {
 	Severity        types.String        `tfsdk:"severity"`
 	Key             types.String        `tfsdk:"key"`
 	ValueField      types.String        `tfsdk:"value_field"`
-	AutoAlertConfig AutoAlertConfig     `tfsdk:"auto_alert_config"`
+	//AutoAlertConfig AutoAlertConfig     `tfsdk:"auto_alert_config"`
 }
 
 type AutoAlertConfig struct {
@@ -58,12 +58,12 @@ type AutoAlertConfig struct {
 type BuilderConfigFilter struct {
 	//And             []BuilderConfigFilter `tfsdk:"and"`
 	//Or              []BuilderConfigFilter `tfsdk:"or"`
-	Not             types.Bool           `tfsdk:"not"`
-	Name            types.String         `tfsdk:"name"`
-	Value           types.String         `tfsdk:"value"`
-	Operator        types.String         `tfsdk:"operator"`
-	IsDate          types.Bool           `tfsdk:"is_date"`
-	IsVersion       types.Bool           `tfsdk:"is_version"`
-	IsWordMatch     types.Bool           `tfsdk:"is_word_match"`
-	CaseInsensitive types.Bool           `tfsdk:"case_insensitive"`
+	Not             types.Bool   `tfsdk:"not"`
+	Name            types.String `tfsdk:"name"`
+	Value           types.String `tfsdk:"value"`
+	Operator        types.String `tfsdk:"operator"`
+	IsDate          types.Bool   `tfsdk:"is_date"`
+	IsVersion       types.Bool   `tfsdk:"is_version"`
+	IsWordMatch     types.Bool   `tfsdk:"is_word_match"`
+	CaseInsensitive types.Bool   `tfsdk:"case_insensitive"`
 }
